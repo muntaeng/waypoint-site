@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Waypoint — Every member gets pushed, even in a room of twenty</title>
+<meta name="description" content="Waypoint gives every gym member a personal pace, load and goal target in group classes — built from their own bests, not a generic number — and shows the coach who's drifting before they quit.">
+<meta name="robots" content="index,follow">
+<meta property="og:title" content="Waypoint — Every member gets pushed, even in a room of twenty">
+<meta property="og:description" content="Personal pace and goal targets for group gym classes, built from each member's own bests — plus a coach view that flags who's falling behind before they quit.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4F6F5;
+    --surface:#FFFFFF;
+    --surface-sink:#EEF2F0;
+    --ink:#16211F;
+    --ink-soft:#4C5C58;
+    --ink-faint:#7C8A86;
+    --line:#DBE2DF;
+    --line-strong:#C7D1CD;
+    --accent:#0E5049;
+    --accent-strong:#0A3B35;
+    --accent-tint:#E4EDEA;
+    --warm:#A9612F;
+    --warm-tint:#F1E7DD;
+    --focus:#0E5049;
+    --shadow:0 1px 2px rgba(20,33,31,.04), 0 8px 28px -18px rgba(20,33,31,.28);
+    --maxw:70rem;
+    --measure:62ch;
+    --serif:ui-serif,"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono","Cascadia Mono","Roboto Mono",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0C1513;
+      --surface:#111E1B;
+      --surface-sink:#0E1A17;
+      --ink:#E9EEEC;
+      --ink-soft:#A2B2AD;
+      --ink-faint:#71827D;
+      --line:#233230;
+      --line-strong:#2E403C;
+      --accent:#54B9AB;
+      --accent-strong:#79CFC2;
+      --accent-tint:#132A27;
+      --warm:#D2935E;
+      --warm-tint:#2A2019;
+      --focus:#54B9AB;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 18px 40px -22px rgba(0,0,0,.7);
+    }
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:clamp(1rem,0.96rem + 0.2vw,1.0625rem);
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+  h1,h2,h3{font-family:var(--serif);font-weight:600;line-height:1.12;text-wrap:balance;letter-spacing:-.008em;margin:0}
+  p{margin:0}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{color:var(--accent-strong)}
+  a:focus-visible,button:focus-visible{outline:2px solid var(--focus);outline-offset:3px;border-radius:3px}
+  strong{font-weight:600;color:var(--ink)}
+  ::selection{background:var(--accent);color:#fff}
+
+  .wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:clamp(1.25rem,5vw,3rem)}
+  .eyebrow{
+    font-family:var(--mono);font-size:.72rem;font-weight:500;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--ink-faint);margin:0 0 1.1rem
+  }
+  .lead{font-size:clamp(1.12rem,1.03rem + 0.5vw,1.32rem);line-height:1.55;color:var(--ink-soft);max-width:56ch}
+
+  header.site{
+    position:sticky;top:0;z-index:10;
+    background:color-mix(in srgb, var(--bg) 86%, transparent);
+    backdrop-filter:saturate(1.1) blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .bar{display:flex;align-items:center;justify-content:space-between;gap:1rem;height:4rem}
+  .brand{display:flex;align-items:baseline;gap:.5rem;font-family:'Space Grotesk',var(--sans);font-weight:700;font-size:1.4rem;letter-spacing:-.02em;color:var(--ink)}
+  .brand .dot{width:.4rem;height:.4rem;border-radius:50%;background:var(--accent);display:inline-block;transform:translateY(-.15em)}
+  .bar .meta{font-family:var(--mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint)}
+  @media (max-width:560px){.bar .meta{display:none}}
+
+  .hero{padding:clamp(3.5rem,9vw,7rem) 0 clamp(2.5rem,6vw,4rem)}
+  .hero h1{font-size:clamp(2.1rem,1.3rem + 3.4vw,3.5rem);max-width:20ch;margin-bottom:1.4rem}
+  .hero h1 em{font-style:normal;color:var(--accent);font-family:inherit}
+  .hero .lead{margin-bottom:2.2rem}
+  .hero .cta-row{display:flex;flex-wrap:wrap;gap:.9rem 1.4rem;align-items:center}
+  .btn{
+    display:inline-flex;align-items:center;gap:.5rem;
+    background:var(--accent);color:#fff;font-weight:500;font-size:.98rem;
+    padding:.72rem 1.25rem;border-radius:7px;border:1px solid transparent;
+    transition:background .15s ease, transform .15s ease;
+  }
+  .btn:hover{background:var(--accent-strong);color:#fff;transform:translateY(-1px)}
+  .btn.ghost{background:transparent;color:var(--ink);border-color:var(--line-strong)}
+  .btn.ghost:hover{background:var(--surface-sink);color:var(--ink);border-color:var(--ink-faint)}
+  .hero .provenance{margin-top:2.6rem;display:flex;flex-wrap:wrap;gap:.5rem .9rem;align-items:center;font-family:var(--mono);font-size:.76rem;color:var(--ink-faint);letter-spacing:.02em}
+  .hero .provenance b{color:var(--ink-soft);font-weight:500}
+
+  .band{border-top:1px solid var(--line);background:var(--surface-sink)}
+  .band .wrap{display:grid;grid-template-columns:1fr;gap:1.4rem;padding-block:clamp(2rem,4vw,2.8rem)}
+  @media (min-width:720px){.band .wrap{grid-template-columns:repeat(3,1fr);gap:2rem}}
+  .stat .n{font-family:var(--serif);font-size:clamp(1.8rem,1.3rem + 1.6vw,2.4rem);color:var(--ink);line-height:1;font-variant-numeric:tabular-nums}
+  .stat .l{margin-top:.55rem;color:var(--ink-soft);font-size:.96rem;max-width:34ch}
+
+  section{padding-block:clamp(3rem,7vw,5.5rem);border-top:1px solid var(--line)}
+  .sec-head{max-width:54ch;margin-bottom:2.6rem}
+  .sec-head .eyebrow{margin-bottom:.9rem}
+  .sec-head h2{font-size:clamp(1.55rem,1.1rem + 1.6vw,2.1rem);margin-bottom:1rem}
+  .sec-head p{color:var(--ink-soft)}
+
+  .engine{display:grid;grid-template-columns:1fr;gap:1.1rem}
+  @media (min-width:720px){.engine{grid-template-columns:repeat(2,1fr)}}
+  .pillar{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:1.5rem 1.5rem 1.6rem;box-shadow:var(--shadow)}
+  .pillar .tag{font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  .pillar h3{font-family:var(--sans);font-size:1.08rem;font-weight:600;margin:.55rem 0 .5rem;letter-spacing:0}
+  .pillar p{color:var(--ink-soft);font-size:.98rem}
+  .pillar.spanwide{grid-column:1/-1;background:var(--accent-tint);border-color:color-mix(in srgb,var(--accent) 22%, var(--line))}
+  .pillar.spanwide h3{color:var(--accent-strong)}
+  .pillar.spanwide p{color:var(--ink)}
+
+  .study{display:grid;grid-template-columns:1fr;gap:1.1rem}
+  @media (min-width:720px){.study{grid-template-columns:repeat(2,1fr)}}
+  .feat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:1.5rem 1.5rem 1.6rem;box-shadow:var(--shadow)}
+  .feat h3{font-family:var(--sans);font-size:1.06rem;font-weight:600;margin-bottom:.5rem;letter-spacing:0}
+  .feat p{color:var(--ink-soft);font-size:.98rem}
+  .warranty{
+    margin-top:1.6rem;background:var(--surface);border:1px solid var(--line-strong);
+    border-radius:12px;padding:1.4rem 1.6rem;box-shadow:var(--shadow)
+  }
+  .warranty p{margin:0;color:var(--ink);font-size:1.02rem}
+  .warranty strong{color:var(--accent-strong)}
+  .no-price{font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-top:1rem}
+
+  .steps{display:grid;grid-template-columns:1fr;gap:1.1rem;counter-reset:step}
+  @media (min-width:720px){.steps{grid-template-columns:repeat(3,1fr)}}
+  .step{position:relative;padding:1.4rem 1.4rem 1.5rem;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+  .step .n{font-family:var(--mono);font-size:.78rem;color:var(--accent);letter-spacing:.06em;font-weight:600;display:block;margin-bottom:.7rem}
+  .step h3{font-family:var(--sans);font-size:1.04rem;font-weight:600;letter-spacing:0;margin-bottom:.45rem}
+  .step p{color:var(--ink-soft);font-size:.95rem}
+
+  .who{display:grid;gap:1.6rem;max-width:var(--measure)}
+  .who p{color:var(--ink-soft)}
+  .who p.big{font-family:var(--serif);font-size:clamp(1.3rem,1rem + 1vw,1.6rem);line-height:1.4;color:var(--ink);max-width:36ch}
+
+  .contact{background:var(--accent);color:#fff;border-top:none}
+  @media (prefers-color-scheme: dark){.contact{background:var(--accent-tint)}}
+  .contact .wrap{display:grid;gap:1.5rem;max-width:56rem}
+  .contact h2{color:#fff;font-size:clamp(1.6rem,1.1rem + 2vw,2.3rem);max-width:24ch}
+  @media (prefers-color-scheme: dark){.contact h2{color:var(--ink)}}
+  .contact p{color:rgba(255,255,255,.9);max-width:52ch;font-size:1.08rem}
+  @media (prefers-color-scheme: dark){.contact p{color:var(--ink-soft)}}
+  .contact .actions{display:flex;flex-wrap:wrap;gap:.9rem 1.2rem;align-items:center;margin-top:.4rem}
+  .btn.light{background:#fff;color:var(--accent-strong)}
+  .btn.light:hover{background:#eef2f0;color:var(--accent-strong);transform:translateY(-1px)}
+  .contact .mailto{font-family:var(--mono);font-size:.95rem;color:#fff;border-bottom:1px solid rgba(255,255,255,.4);padding-bottom:1px}
+  .contact .mailto:hover{color:#fff;border-color:#fff}
+  @media (prefers-color-scheme: dark){.contact .mailto{color:var(--ink)}.contact .btn.light{background:var(--accent);color:#fff}.contact .btn.light:hover{background:var(--accent-strong);color:#fff}}
+
+  footer.site{padding-block:2.5rem;border-top:1px solid var(--line)}
+  footer.site .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:.6rem;align-items:center}
+  footer.site .fmeta{font-family:var(--mono);font-size:.74rem;letter-spacing:.06em;color:var(--ink-faint)}
+
+  .reveal{opacity:0;transform:translateY(14px);transition:opacity .6s ease, transform .6s ease}
+  .reveal.in{opacity:1;transform:none}
+  @media (prefers-reduced-motion: reduce){
+    .reveal{opacity:1;transform:none;transition:none}
+    .btn,.btn:hover{transition:none;transform:none}
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap bar">
+    <span class="brand">Waypoint<span class="dot" aria-hidden="true"></span></span>
+    <span class="meta"><a href="about.html" style="color:inherit">About</a> · Personal targets for group gyms · United Kingdom</span>
+  </div>
+</header>
+
+<main>
+  <!-- HERO -->
+  <section class="hero" style="border-top:none" aria-label="Introduction">
+    <div class="wrap">
+      <p class="eyebrow">For gyms that coach hard, not just program hard</p>
+      <h1 class="reveal">Every member gets pushed — <em>even in a room of twenty.</em></h1>
+      <p class="lead reveal">Waypoint gives each member their own pace, load and goal target for every class — built from their own bests, not a generic number on the whiteboard. And it shows the coach, before class, who's turning up cooked, who's carrying a niggle, and who's quietly started to drift.</p>
+      <div class="cta-row reveal">
+        <a class="btn" href="#contact">Become a founding gym</a>
+        <a class="btn ghost" href="#how">See how it works</a>
+      </div>
+      <div class="provenance reveal">
+        <span>Live today in <b>one founding gym</b></span>
+        <span aria-hidden="true">·</span>
+        <span>taking on <b>two or three more</b></span>
+        <span aria-hidden="true">·</span>
+        <span>runs <b>alongside</b> what you already use</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- STAT BAND -->
+  <div class="band" aria-label="At a glance">
+    <div class="wrap">
+      <div class="stat reveal">
+        <div class="n">1</div>
+        <div class="l">target per member, per session — not one number for the whole class.</div>
+      </div>
+      <div class="stat reveal">
+        <div class="n">0</div>
+        <div class="l">new logins for members to learn, no switching off your current booking tool.</div>
+      </div>
+      <div class="stat reveal">
+        <div class="n">2–3</div>
+        <div class="l">founding gym spots left, each one shaped around how that gym actually coaches.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- THE PROBLEM -->
+  <section aria-label="The problem">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <p class="eyebrow">The problem</p>
+        <h2>The member who goes quiet rarely complains first</h2>
+        <p>In a class of twenty, pacing is usually one-size: the same split, the same scaling, the same workout for the strongest and newest member in the room. Some are coasting. Some are in over their head. Either way, they stop feeling seen — and they don't tell you before they cancel.</p>
+      </div>
+      <div class="engine">
+        <div class="pillar reveal">
+          <span class="tag">Targets</span>
+          <h3>Pace, split and load — from their bests</h3>
+          <p>Distance-aware pace for run, row, bike and ski, and load targets from each member's own numbers — so a HYROX class, a metcon, or a strength day is pushing the right person at the right intensity, not a class-wide guess.</p>
+        </div>
+        <div class="pillar reveal">
+          <span class="tag">Goals</span>
+          <h3>A real target, with a roadmap to it</h3>
+          <p>A coach-set goal — a time, a lift, a first rep — turned into a week-by-week progression, so "get fitter" becomes something specific the member can see themselves closing in on.</p>
+        </div>
+        <div class="pillar spanwide reveal">
+          <span class="tag">Radar</span>
+          <h3>The coach sees drift before it becomes a cancellation</h3>
+          <p>No new workload for the coach — Waypoint flags who's fallen off their own pace, who hasn't touched a PB in weeks, or whose attendance has quietly dropped, before that member decides to leave. That's the retention lever: catching it while there's still something to do about it.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOUNDING GYM OFFER -->
+  <section aria-label="The offer">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <p class="eyebrow">The founding gym offer</p>
+        <h2>Built around how you already coach, not the other way round</h2>
+        <p>I'm taking on two or three founding gyms, full stop — not a waitlist for a generic product.</p>
+      </div>
+      <div class="study">
+        <div class="feat reveal">
+          <h3>Tailored to your gym</h3>
+          <p>Your sessions, your scaling philosophy, your branding. It's shaped around how your coaches already run a class, not a template they have to adapt to.</p>
+        </div>
+        <div class="feat reveal">
+          <h3>Founding pricing, locked in</h3>
+          <p>Well below what a tool like this normally costs, for as long as you use it — the early-access trade for shaping it with me.</p>
+        </div>
+        <div class="feat reveal">
+          <h3>A direct line to the person building it</h3>
+          <p>Not a support ticket queue. Feedback goes straight to the build, and you get a real say in what's prioritised next.</p>
+        </div>
+        <div class="feat reveal">
+          <h3>Runs alongside what you use now</h3>
+          <p>No ripping out your booking system or your current app. Waypoint sits next to it and does the one job those tools don't: personal targets and the attention radar.</p>
+        </div>
+      </div>
+      <div class="warranty reveal">
+        <p><strong>Honest, not finished:</strong> you'd be an early gym, and that's exactly why it's cheap, custom, and built around you rather than the reverse. Cancel any time — nothing to lose by trying it.</p>
+      </div>
+      <p class="no-price">Pricing scoped per gym · discussed on the call</p>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="how" aria-label="How it works">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <p class="eyebrow">The process</p>
+        <h2>How it works</h2>
+        <p>No migration, no new app for members to download.</p>
+      </div>
+      <div class="steps">
+        <div class="step reveal"><span class="n">Step 01</span><h3>Share your sessions and bests</h3><p>Your class structure, scaling options, and whatever bests and maxes you already track for members.</p></div>
+        <div class="step reveal"><span class="n">Step 02</span><h3>Waypoint builds the targets</h3><p>Per-member pace, load and goal targets for every class, and a running radar on who's drifting off their own pace or attendance.</p></div>
+        <div class="step reveal"><span class="n">Step 03</span><h3>Your coaches keep the credit</h3><p>The attention still comes from your coaches — Waypoint just tells them, before class, exactly where to point it.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHO -->
+  <section aria-label="About">
+    <div class="wrap">
+      <div class="sec-head reveal"><p class="eyebrow">Who's behind it</p><h2>Built by someone who trains in these classes</h2></div>
+      <div class="who reveal">
+        <p class="big">I left my last gym for exactly the reason Waypoint exists: I went under the radar in a group class and nobody noticed until I'd already stopped booking in.</p>
+        <p>Waypoint is built by one engineer, end to end — the pacing math, the goal roadmaps, the coach-facing radar. No sales team, no support desk standing between you and the person who writes the code. If something's wrong with how it fits your gym, you tell me directly and it gets fixed.</p>
+        <p><a href="about.html">More about me and why I'm building this&nbsp;→</a> &nbsp;·&nbsp; <a href="mailto:muntadhar@muntaengineering.com?subject=Founding%20gym%20-%20walkthrough%20request">Watch the 60-second coach-screen walkthrough&nbsp;→</a></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section class="contact" id="contact" aria-label="Contact">
+    <div class="wrap">
+      <h2 class="reveal">Worth 15 minutes to see what it'd look like for your gym?</h2>
+      <p class="reveal">Tell me a bit about your classes and I'll show you what the member and coach views would look like for your gym — no obligation, and happy to run it past your coaches first.</p>
+      <div class="actions reveal">
+        <a class="btn light" href="mailto:muntadhar@muntaengineering.com?subject=Founding%20gym%20enquiry">Email Waypoint</a>
+        <a class="mailto" href="mailto:muntadhar@muntaengineering.com">muntadhar@muntaengineering.com</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <span class="brand" style="font-size:1.1rem">Waypoint<span class="dot" aria-hidden="true"></span></span>
+    <span class="fmeta">Personal targets for group gyms · United Kingdom · 2026</span>
+  </div>
+</footer>
+
+<script>
+  (function(){
+    var els = document.querySelectorAll('.reveal');
+    if(!('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+      els.forEach(function(e){e.classList.add('in')});
+      return;
+    }
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); }
+      });
+    }, {rootMargin:'0px 0px -8% 0px', threshold:0.06});
+    els.forEach(function(e){io.observe(e)});
+  })();
+</script>
+</body>
+</html>
